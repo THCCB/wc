@@ -152,10 +152,7 @@ const FormPage = () => {
       const response = await axios.post(`${API_URL}/api/submit`, form, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        },
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false
-        })
+        }
         // Removed httpsAgent configuration as it's not available in browser environment
       });
       
