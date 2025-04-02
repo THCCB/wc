@@ -152,8 +152,10 @@ const FormPage = () => {
       const response = await axios.post(`${API_URL}/api/submit`, form, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
-        // Removed httpsAgent configuration as it's not available in browser environment
+        },
+        // Add secure request options
+        withCredentials: true,
+        timeout: 10000
       });
       
       // Navigate to thank you page with submission ID for print/edit functionality
