@@ -263,7 +263,10 @@ const AdminPage = () => {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/submissions`);
+        const response = await axios.get(`${API_URL}/api/submissions`, {
+          // Remove any problematic SSL configuration
+          // This matches the approach used in FormPage.jsx
+        });
         setSubmissions(response.data);
         setFilteredSubmissions(response.data);
         setLoading(false);

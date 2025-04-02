@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-// Import the https module properly
-import https from 'https';
+// Remove the direct https import and use axios's built-in https handling
 import { API_URL } from '../config';
 import {
   FormContainer,
@@ -154,10 +153,7 @@ const FormPage = () => {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        // Add SSL configuration to handle certificate issues
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: true // Always verify SSL certificates in production
-        })
+        // Remove the problematic httpsAgent configuration
       });
       
       // Navigate to thank you page with submission ID for print/edit functionality
