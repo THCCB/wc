@@ -267,9 +267,7 @@ const AdminPage = () => {
       try {
         const response = await axios.get(`${API_URL}/api/submissions`, {
           // Add these options to handle SSL issues
-          httpsAgent: new https.Agent({
-            rejectUnauthorized: false // Note: Only use in development, not recommended for production
-          })
+
         });
         setSubmissions(response.data);
         setFilteredSubmissions(response.data);
