@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import https from 'https';
+// Import the https module properly
+const https = require('https');
 import { API_URL } from '../config';
 import {
   FormContainer,
@@ -155,7 +156,7 @@ const FormPage = () => {
         },
         // Add SSL configuration to handle certificate issues
         httpsAgent: new https.Agent({
-          rejectUnauthorized: process.env.NODE_ENV !== 'development'
+          rejectUnauthorized: true // Always verify SSL certificates in production
         })
       });
       
