@@ -265,13 +265,7 @@ const AdminPage = () => {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/submissions`, {
-          httpsAgent: new https.Agent({
-            rejectUnauthorized: false // Note: Only use in development, not recommended for production
-          })
-          // Add these options to handle SSL issues
-
-        });
+        const response = await axios.get(`${API_URL}/api/submissions`);
         setSubmissions(response.data);
         setFilteredSubmissions(response.data);
         setLoading(false);
