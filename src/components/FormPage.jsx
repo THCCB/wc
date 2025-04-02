@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import https from 'https';
 import { API_URL } from '../config';
 import {
   FormContainer,
@@ -151,13 +152,19 @@ const FormPage = () => {
       const response = await axios.post(`${API_URL}/api/submit`, form, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        // Add SSL configuration to handle certificate issues
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: process.env.NODE_ENV !== 'development'
+        })
       });
       
       // Navigate to thank you page with submission ID for print/edit functionality
       navigate('/thank-you', { state: { submissionId: response.data.id } });
     } catch (error) {
       console.error('Submission failed:', error);
+      // Add better error handling
+      alert(`Form submission failed: ${error.message}. Please try again or contact support.`);
     }
   };
 
