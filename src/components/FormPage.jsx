@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import https from 'https';
+// Remove https import as it's not available in browser environment
 import { API_URL } from '../config';
 import {
   FormContainer,
@@ -152,11 +152,8 @@ const FormPage = () => {
       const response = await axios.post(`${API_URL}/api/submit`, form, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        },
-        // Add these options to handle SSL issues
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false // Note: Only use in development, not recommended for production
-        })
+        }
+        // Removed httpsAgent configuration as it's not available in browser environment
       });
       
       // Navigate to thank you page with submission ID for print/edit functionality
