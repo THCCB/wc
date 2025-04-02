@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+// Import https for SSL configuration
+import https from 'https';
 import styled from 'styled-components';
 import { API_URL } from '../config';
 
@@ -140,7 +142,12 @@ const SubmissionDetail = () => {
   useEffect(() => {
     const fetchSubmissionDetail = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/submissions/${id}`);
+        const response = await axios.get(`${API_URL}/api/submissions/${id}`, {
+          // Add these options to handle SSL issues
+          httpsAgent: new https.Agent({
+            rejectUnauthorized: false // Note: Only use in development, not recommended for production
+          })
+        });
         setSubmission(response.data);
         setLoading(false);
       } catch (err) {

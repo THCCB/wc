@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
+// Import https for SSL configuration
+import https from 'https';
 import { API_URL } from '../config';
 
 const ThankYouContainer = styled.div`
@@ -120,7 +122,12 @@ const ThankYou = () => {
       // Fetch the submission data
       const fetchSubmissionData = async () => {
         try {
-          const response = await axios.get(`${API_URL}/api/submissions/${location.state.submissionId}`);
+          const response = await axios.get(`${API_URL}/api/submissions/${location.state.submissionId}`, {
+            // Add these options to handle SSL issues
+            httpsAgent: new https.Agent({
+              rejectUnauthorized: false // Note: Only use in development, not recommended for production
+            })
+          });
           setSubmissionData(response.data);
         } catch (error) {
           console.error('Error fetching submission data:', error);
