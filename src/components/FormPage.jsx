@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 // Import the https module properly
-const https = require('https');
+import https from 'https';
 import { API_URL } from '../config';
 import {
   FormContainer,
