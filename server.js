@@ -7,6 +7,7 @@ import { open } from 'sqlite';
 import cors from 'cors';
 import fs from 'fs';
 import ExcelJS from 'exceljs';
+import { setupHealthCheck } from './healthz.js';
 
 // ES module support
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,9 @@ const upload = multer({
 
 // Initialize Express app
 const app = express();
+
+// Setup health check endpoint for Render.com
+setupHealthCheck(app);
 
 // Middleware
 app.use(express.json());

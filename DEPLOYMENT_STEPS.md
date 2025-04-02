@@ -42,7 +42,7 @@ As outlined in your DEPLOYMENT_GUIDE.md:
    - Add environment variables:
      - PORT: 10000
      - NODE_ENV: production
-     - DATABASE_URL: (if using external database)
+     - DATABASE_URL: /opt/render/project/src/data/welfare_committee.db (for SQLite on persistent disk)
      - FRONTEND_URL: Your application URL (once deployed)
 
 3. Create a persistent disk for uploads and database:
