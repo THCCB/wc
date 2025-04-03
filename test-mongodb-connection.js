@@ -9,8 +9,6 @@ const MONGODB_URI = 'mongodb+srv://cbvcroom6:fA0ZkeAFIzmIj7mB@cluster0.ctiutem.m
 
 // MongoDB connection options
 const options = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 15000,
     socketTimeoutMS: 45000,
     family: 4,
