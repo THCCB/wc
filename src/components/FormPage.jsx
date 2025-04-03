@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-// Remove https import as it's not available in browser environment
 import { API_URL, axiosConfig } from '../config';
 import {
   FormContainer,
@@ -154,7 +153,9 @@ const FormPage = () => {
         headers: {
           ...axiosConfig.headers,
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        // Apply SSL configuration
+        httpsAgent: axiosConfig.httpsAgent
       });
       
       // Navigate to thank you page with submission ID for print/edit functionality

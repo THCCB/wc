@@ -1,8 +1,8 @@
 // Configuration file for environment-specific settings
 
 // API URL - uses environment variable in production or falls back to localhost in development
-// Ensure HTTPS is used in production and HTTP in development
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Always use HTTPS for secure communication
+export const API_URL = import.meta.env.VITE_API_URL || 'https://ddcwc.forms.onrender.com';
 
 // SSL Configuration
 export const axiosConfig = {
@@ -11,9 +11,11 @@ export const axiosConfig = {
   headers: {
     'Content-Type': 'application/json'
   },
-  // Force using TLS 1.2 or higher
+  // SSL/TLS Configuration
   httpsAgent: {
+    rejectUnauthorized: false, // Temporarily disable SSL verification for development
     secureProtocol: 'TLS_method',
-    minVersion: 'TLSv1.2'
+    minVersion: 'TLSv1.2',
+    ciphers: 'HIGH:!aNULL:!MD5'
   }
 };
