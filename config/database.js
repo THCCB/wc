@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 // Get MongoDB connection string from environment variable
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/welfare_committee';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://cbvcroom6:fA0ZkeAFIzmIj7mB@cluster0.ctiutem.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 // Get SQLite database path from environment variable
 const DATABASE_URL = process.env.DATABASE_URL || join(__dirname, '..', 'welfare_committee.db');
 
