@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import https from 'https';
+import crypto from 'crypto';
 import { API_URL, axiosConfig } from '../config';
 import {
   FormContainer,
@@ -154,7 +156,12 @@ const FormPage = () => {
           ...axiosConfig.headers,
           'Content-Type': 'multipart/form-data'
         },
-        // Let browser handle SSL/TLS negotiation
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: true,
+          secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
+          minVersion: 'TLSv1.2',
+          ciphers: 'HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA'
+        }),
         validateStatus: function (status) {
           return status >= 200 && status < 300;
         },
