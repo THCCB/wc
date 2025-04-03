@@ -148,21 +148,24 @@ const FormPage = () => {
         form.append('_id', location.state.submissionData._id); // Using MongoDB's _id
       }
   
-      const response = await axios.post(`${API_URL}/api/submit`, form, {
-        ...axiosConfig,
+      // Use a more browser-compatible configuration for HTTPS requests
+      // Create a direct URL to the API endpoint
+      const apiEndpoint = new URL('/api/submit', API_URL);
+      
+      // Use a simplified axios configuration optimized for browser environments
+      const response = await axios.post(apiEndpoint.toString(), form, {
         headers: {
-          ...axiosConfig.headers,
           'Content-Type': 'multipart/form-data'
         },
         validateStatus: function (status) {
           return status >= 200 && status < 300;
         },
-        timeout: 15000, // Increase timeout for larger form data
-        // Remove any Node.js specific HTTPS configuration that might be causing issues
-        httpsAgent: undefined, // Let browser handle SSL/TLS
-        // Add additional options to handle SSL issues
-        withCredentials: true,
-        maxRedirects: 5
+        timeout: 60000, // Extended timeout for larger form data and potential network issues
+        withCredentials: false, // Disabled to avoid CORS issues with credentials
+        maxRedirects: 5,
+        // Disable features that might interfere with SSL/TLS negotiation
+        proxy: false,
+        decompress: true // Ensure proper handling of compressed responses
       });
       
       // Navigate to thank you page with MongoDB _id for print/edit functionality
@@ -172,13 +175,26 @@ const FormPage = () => {
       // Enhanced error handling with more details
       let errorMessage = error.message;
       
+      // Log detailed error information for debugging
+      console.log('Form Submission Error Details:', {
+        url: apiEndpoint.toString(),
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorStack: error.stack
+      });
+      
       // Check for specific SSL/network errors
       if (error.code === 'ERR_SSL_VERSION_OR_CIPHER_MISMATCH' || 
           error.code === 'ERR_NETWORK') {
         errorMessage = 'There was a network or SSL connection issue. Please check your internet connection and try again.';
+        // Suggest alternative actions to the user
+        alert(`Form submission failed: ${errorMessage}\n\nTry these solutions:\n1. Refresh the page and try again\n2. Clear your browser cache\n3. Try using a different browser\n4. Contact support if the issue persists`);
+        return;
       }
       
+      // For other types of errors, provide a more generic message
       alert(`Form submission failed: ${errorMessage}. Please try again or contact support.`);
+
     }
   };
 

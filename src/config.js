@@ -4,6 +4,11 @@
 // Always use HTTPS for secure communication
 export const API_URL = import.meta.env.VITE_API_URL || 'https://ddcwc.forms.onrender.com';
 
+// Ensure API URL always uses HTTPS in production
+if (import.meta.env.PROD && !API_URL.startsWith('https://')) {
+  console.warn('API_URL should use HTTPS in production for security');
+}
+
 // Axios configuration for browser environment
 export const axiosConfig = {
   withCredentials: true,
