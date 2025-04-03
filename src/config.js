@@ -2,7 +2,7 @@
 
 // API URL - uses environment variable in production or falls back to localhost in development
 // Always use HTTPS for secure communication
-export const API_URL = import.meta.env.VITE_API_URL || 'https://welfare-committee-form.onrender.com';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://wc-tdgr.onrender.com';
 
 // Log the API URL for debugging purposes
 console.log('API URL:', API_URL);

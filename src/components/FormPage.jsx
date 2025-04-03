@@ -158,14 +158,19 @@ const FormPage = () => {
       
       console.log('Submitting form to:', apiEndpoint);
       
-      // Use a simplified axios configuration optimized for browser environments
+      // Use a more robust axios configuration with error handling
       const response = await axios.post(apiEndpoint, form, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        // Simplified configuration for browser environments
-        timeout: 60000, // Extended timeout for larger form data
-        withCredentials: false // Avoid CORS issues with credentials
+        // Enhanced configuration for better reliability
+        timeout: 120000, // Extended timeout for larger form data (2 minutes)
+        withCredentials: false, // Avoid CORS issues with credentials
+        maxContentLength: 10 * 1024 * 1024, // 10MB max content length
+        maxBodyLength: 10 * 1024 * 1024, // 10MB max body length
+        validateStatus: function (status) {
+          return status >= 200 && status < 300; // Only resolve for success status codes
+        }
       });
       
       // Navigate to thank you page with MongoDB _id for print/edit functionality
@@ -180,21 +185,35 @@ const FormPage = () => {
         url: apiEndpoint,
         errorCode: error.code,
         errorMessage: error.message,
-        errorStack: error.stack
+        errorStack: error.stack,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : 'No response data'
       });
       
-      // Check for specific SSL/network errors
+      // Handle specific error types with appropriate messages
       if (error.code === 'ERR_SSL_VERSION_OR_CIPHER_MISMATCH' || 
           error.code === 'ERR_NETWORK') {
         errorMessage = 'There was a network or SSL connection issue. Please check your internet connection and try again.';
         // Suggest alternative actions to the user
         alert(`Form submission failed: ${errorMessage}\n\nTry these solutions:\n1. Refresh the page and try again\n2. Clear your browser cache\n3. Try using a different browser\n4. Try using a different network connection\n5. Contact support if the issue persists`);
         return;
+      } else if (error.response && error.response.status === 500) {
+        // Handle 500 Internal Server Error specifically
+        errorMessage = 'The server encountered an internal error. This might be due to server load or a temporary issue.';
+        alert(`Form submission failed: ${errorMessage}\n\nPlease try again in a few minutes. If the problem persists, contact support with the following information:\n- Time of submission: ${new Date().toLocaleString()}\n- Form data: ${formData.name}, ${formData.employeeCode}`);
+        return;
+      } else if (error.response && error.response.status === 413) {
+        // Handle payload too large error
+        errorMessage = 'The form data (likely the photo) is too large to upload.';
+        alert(`Form submission failed: ${errorMessage}\n\nPlease reduce the size of your photo to under 200KB and try again.`);
+        return;
       }
       
       // For other types of errors, provide a more generic message
       alert(`Form submission failed: ${errorMessage}. Please try again or contact support.`);
-
     }
   };
 
