@@ -135,10 +135,9 @@ const FormPage = () => {
   // Update the API URL in the handleSubmit function
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Define apiEndpoint at the beginning of the function so it's available in the catch block
-    const apiEndpoint = new URL('/api/submit', API_URL);
     
     try {
+      // Create a FormData object to handle file uploads
       const form = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
@@ -151,21 +150,19 @@ const FormPage = () => {
         form.append('_id', location.state.submissionData._id); // Using MongoDB's _id
       }
       
-      console.log('Submitting form to:', apiEndpoint.toString());
+      // Use direct string for API endpoint to avoid URL parsing issues
+      const apiEndpoint = `${API_URL}/api/submit`;
+      console.log('Submitting form to:', apiEndpoint);
       
       // Use a simplified axios configuration optimized for browser environments
-      // Use a more browser-compatible configuration for HTTPS requests
-      console.log('Attempting to submit form to:', apiEndpoint.toString());
-      
-      const response = await axios.post(apiEndpoint.toString(), form, {
+      const response = await axios.post(apiEndpoint, form, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
         // Simplified configuration for browser environments
         timeout: 60000, // Extended timeout for larger form data
-        withCredentials: false, // Avoid CORS issues with credentials
-        // Don't include Node.js specific HTTPS options in browser environment
-        maxRedirects: 5
+        withCredentials: false // Avoid CORS issues with credentials
+        // Let browser handle SSL/TLS negotiation automatically
       });
       
       // Navigate to thank you page with MongoDB _id for print/edit functionality
@@ -177,7 +174,7 @@ const FormPage = () => {
       
       // Log detailed error information for debugging
       console.log('Form Submission Error Details:', {
-        url: apiEndpoint ? apiEndpoint.toString() : API_URL + '/api/submit',
+        url: apiEndpoint,
         errorCode: error.code,
         errorMessage: error.message,
         errorStack: error.stack
@@ -188,7 +185,7 @@ const FormPage = () => {
           error.code === 'ERR_NETWORK') {
         errorMessage = 'There was a network or SSL connection issue. Please check your internet connection and try again.';
         // Suggest alternative actions to the user
-        alert(`Form submission failed: ${errorMessage}\n\nTry these solutions:\n1. Refresh the page and try again\n2. Clear your browser cache\n3. Try using a different browser\n4. Contact support if the issue persists`);
+        alert(`Form submission failed: ${errorMessage}\n\nTry these solutions:\n1. Refresh the page and try again\n2. Clear your browser cache\n3. Try using a different browser\n4. Try using a different network connection\n5. Contact support if the issue persists`);
         return;
       }
       

@@ -11,8 +11,8 @@ if (import.meta.env.PROD && !API_URL.startsWith('https://')) {
 
 // Axios configuration for browser environment
 export const axiosConfig = {
-  withCredentials: true,
-  timeout: 10000,
+  withCredentials: false, // Set to false to avoid CORS issues
+  timeout: 30000, // Increased timeout for larger form data
   headers: {
     'Content-Type': 'application/json'
   },
@@ -20,8 +20,7 @@ export const axiosConfig = {
   validateStatus: function (status) {
     return status >= 200 && status < 300;
   },
-  maxRedirects: 5,
-  // SSL/TLS Configuration
-  httpsAgent: undefined, // Let browser handle SSL/TLS
-  rejectUnauthorized: false // Allow self-signed certificates
+  maxRedirects: 5
+  // Remove Node.js specific SSL/TLS Configuration that doesn't work in browsers
+  // Browser will handle SSL/TLS negotiation automatically
 };
