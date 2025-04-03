@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import https from 'https';
 import { API_URL, axiosConfig } from '../config';
 import {
   FormContainer,
@@ -155,9 +154,6 @@ const FormPage = () => {
           ...axiosConfig.headers,
           'Content-Type': 'multipart/form-data'
         },
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false // Allow self-signed certificates in development
-        }),
         validateStatus: function (status) {
           return status >= 200 && status < 300;
         },
