@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: welfare-committee-form
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: bash init-data-dir.sh
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        value: /opt/render/project/src/data/welfare_committee.db
+      - key: FRONTEND_URL
+        value: https://welfare-committee-form.onrender.com
+      - key: UPLOADS_DIR
+        value: /opt/render/project/src/data/uploads
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
