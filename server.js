@@ -2,8 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import connectDB from './config/database.js';
+import Submission from './models/submission.js';
 import cors from 'cors';
 import fs from 'fs';
 import ExcelJS from 'exceljs';
@@ -15,7 +15,6 @@ const __dirname = dirname(__filename);
 
 // Environment variables for configuration
 const PORT = process.env.PORT || 3000;
-const DATABASE_URL = process.env.DATABASE_URL || join(__dirname, 'welfare_committee.db');
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // Create uploads directory if it doesn't exist
@@ -56,68 +55,16 @@ app.use(cors({
 }));
 app.use('/uploads', express.static(uploadsDir));
 
-// Database setup
-let db;
-
+// Initialize database
 async function initializeDatabase() {
-  db = await open({
-    filename: DATABASE_URL,
-    driver: sqlite3.Database
-  });
+  // Connect to MongoDB
+  await connectDB();
   
   // Create exports directory if it doesn't exist
   const exportsDir = process.env.EXPORTS_DIR || join(__dirname, 'exports');
   if (!fs.existsSync(exportsDir)) {
     fs.mkdirSync(exportsDir, { recursive: true });
   }
-
-  // Create tables if they don't exist
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS submissions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      designation TEXT NOT NULL,
-      gender TEXT NOT NULL,
-      employeeCode TEXT NOT NULL,
-      mobile TEXT NOT NULL,
-      alternateMobile TEXT,
-      landline TEXT,
-      officialEmail TEXT NOT NULL,
-      personalEmail TEXT,
-      otherEmail TEXT,
-      joiningDate TEXT,
-      retirementDate TEXT NOT NULL,
-      bloodGroup TEXT NOT NULL,
-      presentAddress TEXT NOT NULL,
-      permanentAddress TEXT NOT NULL,
-      photoPath TEXT NOT NULL,
-      spouseName TEXT NOT NULL,
-      spouseWorking TEXT NOT NULL,
-      spouseMedicalFacility TEXT NOT NULL,
-      spouseMedicalThroughOffice INTEGER,
-      numberOfChildren INTEGER NOT NULL,
-      childrenMedicalFacility TEXT,
-      pwdCategory TEXT,
-      pwdName TEXT,
-      motherName TEXT,
-      motherDOB TEXT,
-      motherBeneficiary TEXT,
-      fatherName TEXT,
-      fatherDOB TEXT,
-      fatherBeneficiary TEXT,
-      additionalInfo TEXT,
-      submissionDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS children (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      submissionId INTEGER,
-      name TEXT,
-      dob TEXT,
-      gender TEXT,
-      FOREIGN KEY (submissionId) REFERENCES submissions(id)
-    );
-  `);
 
   console.log('Database initialized');
 }
@@ -133,7 +80,7 @@ app.post('/api/submit', upload.single('photo'), async (req, res) => {
     // Check if this is an update to an existing submission
     if (formData.id) {
       // This is an update operation
-      const existingSubmission = await db.get('SELECT photoPath FROM submissions WHERE id = ?', [formData.id]);
+      const existingSubmission = await Submission.findById(formData.id);
       
       if (!existingSubmission) {
         return res.status(404).json({ error: 'Submission not found' });
@@ -153,66 +100,46 @@ app.post('/api/submit', upload.single('photo'), async (req, res) => {
       }
       
       // Update the submission
-      await db.run(`
-        UPDATE submissions SET
-          name = ?, designation = ?, gender = ?, employeeCode = ?, mobile = ?, 
-          alternateMobile = ?, landline = ?, officialEmail = ?, personalEmail = ?, 
-          otherEmail = ?, joiningDate = ?, retirementDate = ?, bloodGroup = ?, 
-          presentAddress = ?, permanentAddress = ?, photoPath = ?, spouseName = ?,
-          spouseWorking = ?, spouseMedicalFacility = ?, spouseMedicalThroughOffice = ?,
-          numberOfChildren = ?, childrenMedicalFacility = ?, pwdCategory = ?, pwdName = ?,
-          motherName = ?, motherDOB = ?, motherBeneficiary = ?, fatherName = ?, 
-          fatherDOB = ?, fatherBeneficiary = ?, additionalInfo = ?
-        WHERE id = ?
-      `, [
-        formData.name,
-        formData.designation,
-        formData.gender,
-        formData.employeeCode,
-        formData.mobile,
-        formData.alternateMobile || null,
-        formData.landline || null,
-        formData.officialEmail,
-        formData.personalEmail || null,
-        formData.otherEmail || null,
-        formData.joiningDate || null,
-        formData.retirementDate,
-        formData.bloodGroup,
-        formData.presentAddress,
-        formData.permanentAddress,
-        updatedPhotoPath,
-        formData.spouseName,
-        formData.spouseWorking,
-        formData.spouseMedicalFacility,
-        formData.spouseMedicalThroughOffice ? 1 : 0,
-        formData.numberOfChildren,
-        formData.childrenMedicalFacility || null,
-        formData.pwdCategory || null,
-        formData.pwdName || null,
-        formData.motherName || null,
-        formData.motherDOB || null,
-        formData.motherBeneficiary || null,
-        formData.fatherName || null,
-        formData.fatherDOB || null,
-        formData.fatherBeneficiary || null,
-        formData.additionalInfo || null,
-        formData.id
-      ]);
+      const updatedSubmission = await Submission.findByIdAndUpdate(
+        formData.id,
+        {
+          name: formData.name,
+          designation: formData.designation,
+          gender: formData.gender,
+          employeeCode: formData.employeeCode,
+          mobile: formData.mobile,
+          alternateMobile: formData.alternateMobile,
+          landline: formData.landline,
+          officialEmail: formData.officialEmail,
+          personalEmail: formData.personalEmail,
+          otherEmail: formData.otherEmail,
+          joiningDate: formData.joiningDate,
+          retirementDate: formData.retirementDate,
+          bloodGroup: formData.bloodGroup,
+          presentAddress: formData.presentAddress,
+          permanentAddress: formData.permanentAddress,
+          photoPath: updatedPhotoPath,
+          spouseName: formData.spouseName,
+          spouseWorking: formData.spouseWorking,
+          spouseMedicalFacility: formData.spouseMedicalFacility,
+          spouseMedicalThroughOffice: formData.spouseMedicalThroughOffice === '1',
+          numberOfChildren: formData.numberOfChildren,
+          childrenMedicalFacility: formData.childrenMedicalFacility,
+          pwdCategory: formData.pwdCategory,
+          pwdName: formData.pwdName,
+          motherName: formData.motherName,
+          motherDOB: formData.motherDOB,
+          motherBeneficiary: formData.motherBeneficiary,
+          fatherName: formData.fatherName,
+          fatherDOB: formData.fatherDOB,
+          fatherBeneficiary: formData.fatherBeneficiary,
+          additionalInfo: formData.additionalInfo,
+          children: childrenDetails
+        },
+        { new: true }
+      );
       
-      // Delete existing children records
-      await db.run('DELETE FROM children WHERE submissionId = ?', [formData.id]);
-      
-      // Insert updated children details
-      if (childrenDetails.length > 0) {
-        for (const child of childrenDetails) {
-          await db.run(`
-            INSERT INTO children (submissionId, name, dob, gender)
-            VALUES (?, ?, ?, ?)
-          `, [formData.id, child.name, child.dob, child.gender]);
-        }
-      }
-      
-      return res.status(200).json({ message: 'Form updated successfully', id: formData.id });
+      return res.status(200).json({ message: 'Form updated successfully', id: updatedSubmission._id });
     }
     
     // This is a new submission
@@ -230,64 +157,44 @@ app.post('/api/submit', upload.single('photo'), async (req, res) => {
       }
     }
 
-    // Insert main submission
-    const result = await db.run(`
-      INSERT INTO submissions (
-        name, designation, gender, employeeCode, mobile, alternateMobile, landline,
-        officialEmail, personalEmail, otherEmail, joiningDate, retirementDate,
-        bloodGroup, presentAddress, permanentAddress, photoPath, spouseName,
-        spouseWorking, spouseMedicalFacility, spouseMedicalThroughOffice,
-        numberOfChildren, childrenMedicalFacility, pwdCategory, pwdName,
-        motherName, motherDOB, motherBeneficiary, fatherName, fatherDOB,
-        fatherBeneficiary, additionalInfo
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      formData.name,
-      formData.designation,
-      formData.gender,
-      formData.employeeCode,
-      formData.mobile,
-      formData.alternateMobile || null,
-      formData.landline || null,
-      formData.officialEmail,
-      formData.personalEmail || null,
-      formData.otherEmail || null,
-      formData.joiningDate || null,
-      formData.retirementDate,
-      formData.bloodGroup,
-      formData.presentAddress,
-      formData.permanentAddress,
-      photoPath,
-      formData.spouseName,
-      formData.spouseWorking,
-      formData.spouseMedicalFacility,
-      formData.spouseMedicalThroughOffice ? 1 : 0,
-      formData.numberOfChildren,
-      formData.childrenMedicalFacility || null,
-      formData.pwdCategory || null,
-      formData.pwdName || null,
-      formData.motherName || null,
-      formData.motherDOB || null,
-      formData.motherBeneficiary || null,
-      formData.fatherName || null,
-      formData.fatherDOB || null,
-      formData.fatherBeneficiary || null,
-      formData.additionalInfo || null
-    ]);
+    // Create new submission
+    const submission = new Submission({
+      name: formData.name,
+      designation: formData.designation,
+      gender: formData.gender,
+      employeeCode: formData.employeeCode,
+      mobile: formData.mobile,
+      alternateMobile: formData.alternateMobile,
+      landline: formData.landline,
+      officialEmail: formData.officialEmail,
+      personalEmail: formData.personalEmail,
+      otherEmail: formData.otherEmail,
+      joiningDate: formData.joiningDate,
+      retirementDate: formData.retirementDate,
+      bloodGroup: formData.bloodGroup,
+      presentAddress: formData.presentAddress,
+      permanentAddress: formData.permanentAddress,
+      photoPath: photoPath,
+      spouseName: formData.spouseName,
+      spouseWorking: formData.spouseWorking,
+      spouseMedicalFacility: formData.spouseMedicalFacility,
+      spouseMedicalThroughOffice: formData.spouseMedicalThroughOffice === '1',
+      numberOfChildren: formData.numberOfChildren,
+      childrenMedicalFacility: formData.childrenMedicalFacility,
+      pwdCategory: formData.pwdCategory,
+      pwdName: formData.pwdName,
+      motherName: formData.motherName,
+      motherDOB: formData.motherDOB,
+      motherBeneficiary: formData.motherBeneficiary,
+      fatherName: formData.fatherName,
+      fatherDOB: formData.fatherDOB,
+      fatherBeneficiary: formData.fatherBeneficiary,
+      additionalInfo: formData.additionalInfo,
+      children: childrenDetails
+    });
 
-    const submissionId = result.lastID;
-
-    // Insert children details if any
-    if (childrenDetails.length > 0) {
-      for (const child of childrenDetails) {
-        await db.run(`
-          INSERT INTO children (submissionId, name, dob, gender)
-          VALUES (?, ?, ?, ?)
-        `, [submissionId, child.name, child.dob, child.gender]);
-      }
-    }
-
-    res.status(201).json({ message: 'Form submitted successfully', id: submissionId });
+    await submission.save();
+    res.status(201).json({ message: 'Form submitted successfully', id: submission._id });
   } catch (error) {
     console.error('Error submitting form:', error);
     res.status(500).json({ error: 'Failed to submit form' });
@@ -297,7 +204,7 @@ app.post('/api/submit', upload.single('photo'), async (req, res) => {
 // Get all submissions for admin page
 app.get('/api/submissions', async (req, res) => {
   try {
-    const submissions = await db.all('SELECT * FROM submissions ORDER BY submissionDate DESC');
+    const submissions = await Submission.find().sort({ submissionDate: -1 });
     res.json(submissions);
   } catch (error) {
     console.error('Error fetching submissions:', error);
@@ -308,8 +215,8 @@ app.get('/api/submissions', async (req, res) => {
 // Export all submissions to Excel
 app.get('/api/export-excel', async (req, res) => {
   try {
-    // Fetch all submissions with their children
-    const submissions = await db.all('SELECT * FROM submissions ORDER BY submissionDate DESC');
+    // Fetch all submissions
+    const submissions = await Submission.find().sort({ submissionDate: -1 });
     
     // Create a new Excel workbook
     const workbook = new ExcelJS.Workbook();
@@ -321,7 +228,7 @@ app.get('/api/export-excel', async (req, res) => {
     
     // Define columns
     worksheet.columns = [
-      { header: 'ID', key: 'id', width: 10 },
+      { header: 'ID', key: '_id', width: 10 },
       { header: 'Name', key: 'name', width: 30 },
       { header: 'Designation', key: 'designation', width: 20 },
       { header: 'Gender', key: 'gender', width: 10 },
@@ -355,12 +262,9 @@ app.get('/api/export-excel', async (req, res) => {
     
     // Add rows
     for (const submission of submissions) {
-      // Fetch children for this submission
-      const children = await db.all('SELECT * FROM children WHERE submissionId = ?', [submission.id]);
-      
       // Format some fields for better readability
       const formattedSubmission = {
-        ...submission,
+        ...submission.toObject(),
         spouseWorking: submission.spouseWorking === 'Yes' ? 'Working' : 'Non-Working',
         spouseMedicalFacility: submission.spouseMedicalFacility === 'Yes' ? 'Availed' : 'Not Availed',
         childrenMedicalFacility: submission.childrenMedicalFacility === 'Yes' ? 'Availed' : 'Not Availed',
@@ -384,12 +288,10 @@ app.get('/api/export-excel', async (req, res) => {
     
     // Add rows for children
     for (const submission of submissions) {
-      if (submission.numberOfChildren > 0) {
-        const children = await db.all('SELECT * FROM children WHERE submissionId = ?', [submission.id]);
-        
-        for (const child of children) {
+      if (submission.numberOfChildren > 0 && submission.children) {
+        for (const child of submission.children) {
           childrenWorksheet.addRow({
-            submissionId: submission.id,
+            submissionId: submission._id,
             parentName: submission.name,
             name: child.name,
             dob: child.dob,
@@ -417,14 +319,12 @@ app.get('/api/submissions/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const submission = await db.get('SELECT * FROM submissions WHERE id = ?', [id]);
+    const submission = await Submission.findById(id);
     if (!submission) {
       return res.status(404).json({ error: 'Submission not found' });
     }
     
-    const children = await db.all('SELECT * FROM children WHERE submissionId = ?', [id]);
-    
-    res.json({ ...submission, children });
+    res.json(submission);
   } catch (error) {
     console.error('Error fetching submission:', error);
     res.status(500).json({ error: 'Failed to fetch submission' });

@@ -1,0 +1,27 @@
+{
+  "project": {
+    "name": "Welfare Committee Form",
+    "description": "A form application for managing welfare committee submissions",
+    "tags": [
+      {
+        "key": "environment",
+        "value": "production"
+      },
+      {
+        "key": "type",
+        "value": "web-application"
+      },
+      {
+        "key": "framework",
+        "value": "react"
+      },
+      {
+        "key": "database",
+        "value": "sqlite"
+      }
+    ],
+    "created_at": "2024-01-31",
+    "max_tags": 50,
+    "organization": "welfare-committee"
+  }
+}
