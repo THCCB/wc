@@ -46,13 +46,58 @@ const app = express();
 // Setup health check endpoint for Render.com
 setupHealthCheck(app);
 
+// Trust proxy for Render.com's infrastructure
+app.set('trust proxy', true);
+
+// Force HTTPS redirect
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: FRONTEND_URL,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Enforce modern TLS protocols
+app.use((req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  next();
+});
+
+// Security headers middleware
+app.use((req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Configure TLS protocol requirements
+app.use((req, res, next) => {
+  const tlsVersion = req.connection.getPeerCertificate?.().version;
+  if (tlsVersion && !['TLSv1.2', 'TLSv1.3'].includes(tlsVersion)) {
+    return res.status(403).send('Insecure protocol version detected');
+  }
+  next();
+});
 app.use('/uploads', express.static(uploadsDir));
 
 // Initialize database
@@ -342,8 +387,61 @@ if (process.env.NODE_ENV === 'production') {
 
 // Start the server
 initializeDatabase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  const https = require('https');
+const fs = require('fs');
+
+// Generate self-signed certificate if missing
+const sslDir = join(__dirname, 'ssl');
+if (!fs.existsSync(sslDir)) fs.mkdirSync(sslDir, { recursive: true });
+
+const sslOptions = {
+    minVersion: 'TLSv1.2',
+    maxVersion: 'TLSv1.3',
+    ciphers: [
+        'TLS_AES_256_GCM_SHA384',
+        'TLS_CHACHA20_POLY1305_SHA256',
+        'TLS_AES_128_GCM_SHA256',
+        'ECDHE-ECDSA-AES128-GCM-SHA256',
+        'ECDHE-RSA-AES128-GCM-SHA256'
+    ].join(':'),
+    honorCipherOrder: true
+};
+
+// Generate certificates if missing
+const certPath = join(sslDir, 'selfsigned.crt');
+const keyPath = join(sslDir, 'selfsigned.key');
+if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+    const attrs = [{ name: 'commonName', value: 'localhost' }];
+    const pems = selfsigned.generate(attrs, {
+        keySize: 4096,
+        algorithm: 'sha256',
+        days: 365,
+        extensions: [
+            { name: 'basicConstraints', cA: true },
+            { name: 'keyUsage', keyCertSign: true, digitalSignature: true, nonRepudiation: true, keyEncipherment: true, dataEncipherment: true },
+            { name: 'subjectAltName', altNames: [
+                { type: 2, value: 'localhost' },
+                { type: 7, ip: '127.0.0.1' }
+            ]}
+        ]
+    });
+    
+    fs.writeFileSync(certPath, pems.cert);
+    fs.writeFileSync(keyPath, pems.private);
+}
+
+sslOptions.cert = fs.readFileSync(certPath);
+sslOptions.key = fs.readFileSync(keyPath);
+
+// Only load certs if paths are provided
+if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
+  sslOptions.key = fs.readFileSync(process.env.SSL_KEY_PATH);
+  sslOptions.cert = fs.readFileSync(process.env.SSL_CERT_PATH);
+}
+
+const server = https.createServer(sslOptions, app);
+server.listen(PORT, () => {
+    console.log(`Secure server running on port ${PORT}`);
   });
 }).catch(err => {
   console.error('Failed to initialize database:', err);
