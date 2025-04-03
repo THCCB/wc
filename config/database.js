@@ -20,8 +20,6 @@ const DATABASE_URL = process.env.DATABASE_URL || join(__dirname, '..', 'welfare_
 
 // MongoDB connection options
 const options = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 15000, // Increased timeout for better connection stability
   socketTimeoutMS: 45000,
   family: 4, // Use IPv4, skip trying IPv6
