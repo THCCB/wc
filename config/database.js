@@ -20,17 +20,22 @@ const DATABASE_URL = process.env.DATABASE_URL || join(__dirname, '..', 'welfare_
 
 // MongoDB connection options
 const options = {
-  // Add any specific options if needed
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 15000, // Increased timeout for better connection stability
+  socketTimeoutMS: 45000,
+  family: 4, // Use IPv4, skip trying IPv6
+  retryWrites: true,
+  w: 'majority',
+  ssl: true,
+  authSource: 'admin'
 };
 
 // Connect to MongoDB with SQLite fallback
 async function connectDB() {
   try {
-    await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // Reduce timeout for faster fallback
-      retryWrites: true,
-      w: 'majority'
-    });
+    console.log('Attempting to connect to MongoDB...');
+    await mongoose.connect(MONGODB_URI, options);
     console.log('Successfully connected to MongoDB.');
     return mongoose.connection; // Return MongoDB connection
   } catch (error) {
