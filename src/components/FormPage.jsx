@@ -135,6 +135,9 @@ const FormPage = () => {
   // Update the API URL in the handleSubmit function
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Define apiEndpoint at the beginning of the function so it's available in the catch block
+    const apiEndpoint = new URL('/api/submit', API_URL);
+    
     try {
       const form = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
@@ -147,25 +150,22 @@ const FormPage = () => {
       if (location.state && location.state.editMode && location.state.submissionData) {
         form.append('_id', location.state.submissionData._id); // Using MongoDB's _id
       }
-  
-      // Use a more browser-compatible configuration for HTTPS requests
-      // Create a direct URL to the API endpoint
-      const apiEndpoint = new URL('/api/submit', API_URL);
+      
+      console.log('Submitting form to:', apiEndpoint.toString());
       
       // Use a simplified axios configuration optimized for browser environments
+      // Use a more browser-compatible configuration for HTTPS requests
+      console.log('Attempting to submit form to:', apiEndpoint.toString());
+      
       const response = await axios.post(apiEndpoint.toString(), form, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        validateStatus: function (status) {
-          return status >= 200 && status < 300;
-        },
-        timeout: 60000, // Extended timeout for larger form data and potential network issues
-        withCredentials: false, // Disabled to avoid CORS issues with credentials
-        maxRedirects: 5,
-        // Disable features that might interfere with SSL/TLS negotiation
-        proxy: false,
-        decompress: true // Ensure proper handling of compressed responses
+        // Simplified configuration for browser environments
+        timeout: 60000, // Extended timeout for larger form data
+        withCredentials: false, // Avoid CORS issues with credentials
+        // Don't include Node.js specific HTTPS options in browser environment
+        maxRedirects: 5
       });
       
       // Navigate to thank you page with MongoDB _id for print/edit functionality
@@ -177,7 +177,7 @@ const FormPage = () => {
       
       // Log detailed error information for debugging
       console.log('Form Submission Error Details:', {
-        url: apiEndpoint.toString(),
+        url: apiEndpoint ? apiEndpoint.toString() : API_URL + '/api/submit',
         errorCode: error.code,
         errorMessage: error.message,
         errorStack: error.stack
