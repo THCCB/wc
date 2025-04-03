@@ -17,6 +17,29 @@ const ThankYouContainer = styled.div`
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 `;
 
+const PhotoContainer = styled.div`
+  margin: 20px auto;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: fit-content;
+  text-align: center;
+`;
+
+const Photo = styled.img`
+  max-width: 200px;
+  max-height: 240px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+`;
+
+const PhotoLabel = styled.div`
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+`;
+
 const ThankYouHeader = styled.h1`
   color: #2c3e50;
   margin-bottom: 20px;
@@ -113,6 +136,7 @@ const ThankYou = () => {
   const location = useLocation();
   const [submissionId, setSubmissionId] = useState(null);
   const [submissionData, setSubmissionData] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState(null);
 
   useEffect(() => {
     // Check if we have a submission ID from the location state
@@ -129,6 +153,9 @@ const ThankYou = () => {
             })
           });
           setSubmissionData(response.data);
+          if (response.data.photoPath) {
+            setPhotoUrl(`${API_URL}/uploads/${response.data.photoPath.split('\\').pop()}`);
+          }
         } catch (error) {
           console.error('Error fetching submission data:', error);
         }
@@ -281,6 +308,12 @@ const ThankYou = () => {
         Your form has been successfully submitted to the Welfare Committee.
         We appreciate your participation and will process your information promptly.
       </Message>
+      {photoUrl && (
+        <PhotoContainer>
+          <Photo src={photoUrl} alt="Profile Photo" />
+          <PhotoLabel>Photo</PhotoLabel>
+        </PhotoContainer>
+      )}
       <ButtonContainer>
         <HomeButton to="/">Return to Home</HomeButton>
         {submissionId && (

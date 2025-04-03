@@ -133,8 +133,31 @@ const FormPage = () => {
   }, [location]);
 
   // Update the API URL in the handleSubmit function
+  const validateForm = () => {
+    // Check if children details are properly filled when children are present
+    if (formData.numberOfChildren > 0) {
+      for (let i = 0; i < formData.childrenDetails.length; i++) {
+        const child = formData.childrenDetails[i];
+        if (!child.name || !child.name.trim()) {
+          throw new Error(`Please enter the name for child ${i + 1}`);
+        }
+        if (!child.dob) {
+          throw new Error(`Please enter the date of birth for child ${i + 1}`);
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    try {
+      // Validate form data before submission
+      validateForm();
+    } catch (validationError) {
+      alert(validationError.message);
+      return;
+    }
     
     // Define apiEndpoint outside try/catch so it's available in both blocks
     const apiEndpoint = `${API_URL}/api/submit`;
@@ -499,7 +522,7 @@ const FormPage = () => {
               {formData.childrenDetails.map((child, index) => (
                 <ChildCard key={index}>
                   <ChildField>
-                    <Label>Name:</Label>
+                    <Label required>Name:</Label>
                     <Input
                       type="text"
                       value={child.name}
@@ -508,10 +531,11 @@ const FormPage = () => {
                         updatedChildren[index].name = e.target.value;
                         setFormData(prev => ({ ...prev, childrenDetails: updatedChildren }));
                       }}
+                      required
                     />
                   </ChildField>
                   <ChildField>
-                    <Label>Date of Birth:</Label>
+                    <Label required>Date of Birth:</Label>
                     <Input
                       type="date"
                       value={child.dob}
@@ -520,6 +544,7 @@ const FormPage = () => {
                         updatedChildren[index].dob = e.target.value;
                         setFormData(prev => ({ ...prev, childrenDetails: updatedChildren }));
                       }}
+                      required
                     />
                   </ChildField>
                   <ChildField>
