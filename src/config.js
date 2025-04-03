@@ -2,7 +2,10 @@
 
 // API URL - uses environment variable in production or falls back to localhost in development
 // Always use HTTPS for secure communication
-export const API_URL = import.meta.env.VITE_API_URL || 'https://ddcwc.forms.onrender.com';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://welfare-committee-form.onrender.com';
+
+// Log the API URL for debugging purposes
+console.log('API URL:', API_URL);
 
 // Ensure API URL always uses HTTPS in production
 if (import.meta.env.PROD && !API_URL.startsWith('https://')) {

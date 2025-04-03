@@ -26,7 +26,9 @@ const options = {
   retryWrites: true,
   w: 'majority',
   ssl: true,
-  authSource: 'admin'
+  authSource: 'admin',
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 };
 
 // Connect to MongoDB with SQLite fallback

@@ -115,16 +115,22 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Initialize database
 async function initializeDatabase() {
-  // Connect to MongoDB
-  await connectDB();
-  
-  // Create exports directory if it doesn't exist
-  const exportsDir = process.env.EXPORTS_DIR || join(__dirname, 'exports');
-  if (!fs.existsSync(exportsDir)) {
-    fs.mkdirSync(exportsDir, { recursive: true });
-  }
+  try {
+    // Connect to MongoDB
+    await connectDB();
+    
+    // Create exports directory if it doesn't exist
+    const exportsDir = process.env.EXPORTS_DIR || join(__dirname, 'exports');
+    if (!fs.existsSync(exportsDir)) {
+      fs.mkdirSync(exportsDir, { recursive: true });
+    }
 
-  console.log('Database initialized');
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize database:', error.message);
+    // Don't exit the process, allow fallback to SQLite
+    console.log('Continuing with fallback database if available...');
+  }
 }
 
 // API Routes

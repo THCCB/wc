@@ -11,10 +11,16 @@ services:
         value: 10000
       - key: DATABASE_URL
         value: /opt/render/project/src/data/welfare_committee.db
+      - key: MONGODB_URI
+        sync: false # This will be set manually in Render dashboard
       - key: FRONTEND_URL
+        value: https://welfare-committee-form.onrender.com
+      - key: VITE_API_URL
         value: https://welfare-committee-form.onrender.com
       - key: UPLOADS_DIR
         value: /opt/render/project/src/data/uploads
+      - key: EXPORTS_DIR
+        value: /opt/render/project/src/data/exports
     disk:
       name: data
       mountPath: /opt/render/project/src/data

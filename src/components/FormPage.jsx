@@ -140,14 +140,17 @@ const FormPage = () => {
       // Create a FormData object to handle file uploads
       const form = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
+        if (key === 'childrenDetails' && Array.isArray(value)) {
+          // Convert array to JSON string for proper transmission
+          form.append(key, JSON.stringify(value));
+        } else if (value !== null && value !== undefined) {
           form.append(key, value);
         }
       });
   
       // If we're in edit mode, include the submission ID
       if (location.state && location.state.editMode && location.state.submissionData) {
-        form.append('_id', location.state.submissionData._id); // Using MongoDB's _id
+        form.append('id', location.state.submissionData._id); // Using MongoDB's _id
       }
       
       // Use direct string for API endpoint to avoid URL parsing issues
@@ -162,7 +165,6 @@ const FormPage = () => {
         // Simplified configuration for browser environments
         timeout: 60000, // Extended timeout for larger form data
         withCredentials: false // Avoid CORS issues with credentials
-        // Let browser handle SSL/TLS negotiation automatically
       });
       
       // Navigate to thank you page with MongoDB _id for print/edit functionality
