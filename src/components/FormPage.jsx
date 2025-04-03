@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 // Remove https import as it's not available in browser environment
-import { API_URL } from '../config';
+import { API_URL, axiosConfig } from '../config';
 import {
   FormContainer,
   FormHeader,
@@ -150,12 +150,11 @@ const FormPage = () => {
       }
   
       const response = await axios.post(`${API_URL}/api/submit`, form, {
+        ...axiosConfig,
         headers: {
+          ...axiosConfig.headers,
           'Content-Type': 'multipart/form-data'
-        },
-        // Add secure request options
-        withCredentials: true,
-        timeout: 10000
+        }
       });
       
       // Navigate to thank you page with submission ID for print/edit functionality
