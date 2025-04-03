@@ -35,7 +35,12 @@ async function connectDB() {
     console.log('Attempting to connect to MongoDB...');
     await mongoose.connect(MONGODB_URI, options);
     console.log('Successfully connected to MongoDB.');
-    return mongoose.connection; // Return MongoDB connection
+    
+    // Initialize MongoDB models
+    const db = mongoose.connection;
+    await db.collection('submissions').createIndex({ createdAt: 1 });
+    
+    return db; // Return MongoDB connection
   } catch (error) {
     console.error('Error connecting to MongoDB:', error.message);
     console.log('Attempting to use SQLite as fallback...');
