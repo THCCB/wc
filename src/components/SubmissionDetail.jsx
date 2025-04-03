@@ -143,9 +143,9 @@ const SubmissionDetail = () => {
     const fetchSubmissionDetail = async () => {
       try {
         const response = await axios.get(`${API_URL}/api/submissions/${id}`, {
-          // Add these options to handle SSL issues
+          withCredentials: true,
           httpsAgent: new https.Agent({
-            rejectUnauthorized: false // Note: Only use in development, not recommended for production
+            rejectUnauthorized: false
           })
         });
         setSubmission(response.data);

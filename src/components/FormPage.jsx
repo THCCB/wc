@@ -145,7 +145,7 @@ const FormPage = () => {
   
       // If we're in edit mode, include the submission ID
       if (location.state && location.state.editMode && location.state.submissionData) {
-        form.append('id', location.state.submissionData.id);
+        form.append('_id', location.state.submissionData._id); // Using MongoDB's _id
       }
   
       const response = await axios.post(`${API_URL}/api/submit`, form, {
@@ -158,8 +158,8 @@ const FormPage = () => {
         httpsAgent: axiosConfig.httpsAgent
       });
       
-      // Navigate to thank you page with submission ID for print/edit functionality
-      navigate('/thank-you', { state: { submissionId: response.data.id } });
+      // Navigate to thank you page with MongoDB _id for print/edit functionality
+      navigate('/thank-you', { state: { submissionId: response.data._id } });
     } catch (error) {
       console.error('Submission failed:', error);
       // Add better error handling

@@ -269,10 +269,16 @@ const AdminPage = () => {
           rejectUnauthorized: false
         });
         const response = await axios.get(`${API_URL}/api/submissions`, {
-          httpsAgent
+          httpsAgent,
+          withCredentials: true
         });
-        setSubmissions(response.data);
-        setFilteredSubmissions(response.data);
+        const transformedSubmissions = response.data.map(submission => ({
+          ...submission,
+          id: submission._id,
+          children: submission.childrenDetails || []
+        }));
+        setSubmissions(transformedSubmissions);
+        setFilteredSubmissions(transformedSubmissions);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch submissions');
