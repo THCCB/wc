@@ -157,15 +157,28 @@ const FormPage = () => {
         validateStatus: function (status) {
           return status >= 200 && status < 300;
         },
-        timeout: 15000 // Increase timeout for larger form data
+        timeout: 15000, // Increase timeout for larger form data
+        // Remove any Node.js specific HTTPS configuration that might be causing issues
+        httpsAgent: undefined, // Let browser handle SSL/TLS
+        // Add additional options to handle SSL issues
+        withCredentials: true,
+        maxRedirects: 5
       });
       
       // Navigate to thank you page with MongoDB _id for print/edit functionality
       navigate('/thank-you', { state: { submissionId: response.data._id } });
     } catch (error) {
       console.error('Submission failed:', error);
-      // Add better error handling
-      alert(`Form submission failed: ${error.message}. Please try again or contact support.`);
+      // Enhanced error handling with more details
+      let errorMessage = error.message;
+      
+      // Check for specific SSL/network errors
+      if (error.code === 'ERR_SSL_VERSION_OR_CIPHER_MISMATCH' || 
+          error.code === 'ERR_NETWORK') {
+        errorMessage = 'There was a network or SSL connection issue. Please check your internet connection and try again.';
+      }
+      
+      alert(`Form submission failed: ${errorMessage}. Please try again or contact support.`);
     }
   };
 
