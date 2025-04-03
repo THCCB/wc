@@ -9,14 +9,13 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/welfar
 
 // MongoDB connection options
 const options = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
+  // Add any specific options if needed
 };
 
 // Connect to MongoDB
 async function connectDB() {
   try {
-    await mongoose.connect(MONGODB_URI, options);
+    await mongoose.connect(MONGODB_URI);
     console.log('Successfully connected to MongoDB.');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error.message);
