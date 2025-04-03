@@ -49,9 +49,15 @@ setupHealthCheck(app);
 // Trust proxy for Render.com's infrastructure
 app.set('trust proxy', true);
 
-// Force HTTPS redirect
+// Force HTTPS redirect only in production and when not already on HTTPS
 app.use((req, res, next) => {
-  if (req.headers['x-forwarded-proto'] !== 'https') {
+  // Skip HTTPS redirect for health check endpoint
+  if (req.path === '/healthz') {
+    return next();
+  }
+  
+  // Only redirect in production and when not already on HTTPS
+  if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
     return res.redirect(301, `https://${req.headers.host}${req.url}`);
   }
   next();
@@ -84,7 +90,8 @@ app.use((req, res, next) => {
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  // More permissive Content-Security-Policy for production
+  res.setHeader('Content-Security-Policy', "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'");
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
@@ -92,7 +99,13 @@ app.use((req, res, next) => {
 
 // Configure TLS protocol requirements
 app.use((req, res, next) => {
-  const tlsVersion = req.connection.getPeerCertificate?.().version;
+  // Skip TLS version check in production environment (Render.com)
+  if (process.env.NODE_ENV === 'production') {
+    return next();
+  }
+  
+  // Only check TLS version in development with HTTPS
+  const tlsVersion = req.connection.getPeerCertificate?.()?.version;
   if (tlsVersion && !['TLSv1.2', 'TLSv1.3'].includes(tlsVersion)) {
     return res.status(403).send('Insecure protocol version detected');
   }
@@ -386,63 +399,98 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start the server
-initializeDatabase().then(() => {
-  const https = require('https');
-const fs = require('fs');
-
-// Generate self-signed certificate if missing
-const sslDir = join(__dirname, 'ssl');
-if (!fs.existsSync(sslDir)) fs.mkdirSync(sslDir, { recursive: true });
-
-const sslOptions = {
-    minVersion: 'TLSv1.2',
-    maxVersion: 'TLSv1.3',
-    ciphers: [
-        'TLS_AES_256_GCM_SHA384',
-        'TLS_CHACHA20_POLY1305_SHA256',
-        'TLS_AES_128_GCM_SHA256',
-        'ECDHE-ECDSA-AES128-GCM-SHA256',
-        'ECDHE-RSA-AES128-GCM-SHA256'
-    ].join(':'),
-    honorCipherOrder: true
-};
-
-// Generate certificates if missing
-const certPath = join(sslDir, 'selfsigned.crt');
-const keyPath = join(sslDir, 'selfsigned.key');
-if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
-    const attrs = [{ name: 'commonName', value: 'localhost' }];
-    const pems = selfsigned.generate(attrs, {
-        keySize: 4096,
-        algorithm: 'sha256',
-        days: 365,
-        extensions: [
+initializeDatabase().then(async () => {
+  // In production (like Render.com), use regular HTTP
+  if (process.env.NODE_ENV === 'production') {
+    // Start HTTP server
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Health check available at http://localhost:${PORT}/healthz`);
+    });
+  } else {
+    // In development, use HTTPS with self-signed certificate
+    try {
+      // Import modules dynamically with better error handling for production compatibility
+      let selfsigned;
+      try {
+        // Ensure we're using proper ES module dynamic import
+        const selfsignedModule = await import('selfsigned');
+        selfsigned = selfsignedModule.default;
+      } catch (importError) {
+        console.error('Failed to import selfsigned module:', importError.message);
+        // Fall back to HTTP server
+        app.listen(PORT, () => {
+          console.log(`Fallback HTTP server running on port ${PORT} after selfsigned import failure`);
+        });
+        return; // Exit the outer function to prevent further HTTPS setup attempts
+      }
+      
+      // Import https module dynamically
+      const httpsModule = await import('https');
+      const https = httpsModule.default;
+      
+      // Generate self-signed certificate if missing
+      const sslDir = join(__dirname, 'ssl');
+      if (!fs.existsSync(sslDir)) fs.mkdirSync(sslDir, { recursive: true });
+      
+      const sslOptions = {
+        minVersion: 'TLSv1.2',
+        maxVersion: 'TLSv1.3',
+        ciphers: [
+          'TLS_AES_256_GCM_SHA384',
+          'TLS_CHACHA20_POLY1305_SHA256',
+          'TLS_AES_128_GCM_SHA256',
+          'ECDHE-ECDSA-AES128-GCM-SHA256',
+          'ECDHE-RSA-AES128-GCM-SHA256'
+        ].join(':'),
+        honorCipherOrder: true
+      };
+      
+      // Generate certificates if missing
+      const certPath = join(sslDir, 'selfsigned.crt');
+      const keyPath = join(sslDir, 'selfsigned.key');
+      if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+        const attrs = [{ name: 'commonName', value: 'localhost' }];
+        // Ensure we're using the ES module correctly
+        const pems = selfsigned.generate(attrs, {
+          keySize: 4096,
+          algorithm: 'sha256',
+          days: 365,
+          extensions: [
             { name: 'basicConstraints', cA: true },
             { name: 'keyUsage', keyCertSign: true, digitalSignature: true, nonRepudiation: true, keyEncipherment: true, dataEncipherment: true },
             { name: 'subjectAltName', altNames: [
-                { type: 2, value: 'localhost' },
-                { type: 7, ip: '127.0.0.1' }
+              { type: 2, value: 'localhost' },
+              { type: 7, ip: '127.0.0.1' }
             ]}
-        ]
-    });
-    
-    fs.writeFileSync(certPath, pems.cert);
-    fs.writeFileSync(keyPath, pems.private);
-}
-
-sslOptions.cert = fs.readFileSync(certPath);
-sslOptions.key = fs.readFileSync(keyPath);
-
-// Only load certs if paths are provided
-if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
-  sslOptions.key = fs.readFileSync(process.env.SSL_KEY_PATH);
-  sslOptions.cert = fs.readFileSync(process.env.SSL_CERT_PATH);
-}
-
-const server = https.createServer(sslOptions, app);
-server.listen(PORT, () => {
-    console.log(`Secure server running on port ${PORT}`);
-  });
+          ]
+        });
+        
+        fs.writeFileSync(certPath, pems.cert);
+        fs.writeFileSync(keyPath, pems.private);
+      }
+      
+      sslOptions.cert = fs.readFileSync(certPath);
+      sslOptions.key = fs.readFileSync(keyPath);
+      
+      // Only load certs if paths are provided
+      if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
+        sslOptions.key = fs.readFileSync(process.env.SSL_KEY_PATH);
+        sslOptions.cert = fs.readFileSync(process.env.SSL_CERT_PATH);
+      }
+      
+      const server = https.createServer(sslOptions, app);
+      server.listen(PORT, () => {
+        console.log(`Secure server running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error('Error setting up HTTPS server:', error);
+      // Fallback to HTTP if HTTPS setup fails
+      app.listen(PORT, () => {
+        console.log(`Fallback HTTP server running on port ${PORT}`);
+      });
+    }
+  }
 }).catch(err => {
   console.error('Failed to initialize database:', err);
 });
