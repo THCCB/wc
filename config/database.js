@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 // ES module support
 const __filename = fileURLToPath(import.meta.url);
@@ -25,16 +26,27 @@ const options = {
 // Connect to MongoDB with SQLite fallback
 async function connectDB() {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000, // Reduce timeout for faster fallback
+      retryWrites: true,
+      w: 'majority'
+    });
     console.log('Successfully connected to MongoDB.');
+    return mongoose.connection; // Return MongoDB connection
   } catch (error) {
     console.error('Error connecting to MongoDB:', error.message);
     console.log('Attempting to use SQLite as fallback...');
     
     try {
+      // Ensure the data directory exists
+      const dataDir = join(__dirname, '..', 'data');
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      
       // Initialize SQLite database
       const db = await open({
-        filename: DATABASE_URL,
+        filename: join(dataDir, 'welfare_committee.db'),
         driver: sqlite3.Database
       });
       
@@ -42,7 +54,7 @@ async function connectDB() {
       return db; // Return the SQLite database connection
     } catch (sqliteError) {
       console.error('Error connecting to SQLite fallback:', sqliteError.message);
-      process.exit(1);
+      throw new Error('Failed to connect to both MongoDB and SQLite');
     }
   }
 

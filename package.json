@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx vite build",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "server": "node server.js"
+    "start": "node server.js",
+    "init-db": "node scripts/init-db.js"
   },
   "dependencies": {
     "sqlite": "^5.0.1",
