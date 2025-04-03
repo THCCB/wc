@@ -18,7 +18,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://cbvcroom6:fA0ZkeAF
 // Get SQLite database path from environment variable
 const DATABASE_URL = process.env.DATABASE_URL || join(__dirname, '..', 'welfare_committee.db');
 
-// MongoDB connection options
+// MongoDB Atlas connection options
 const options = {
   serverSelectionTimeoutMS: 15000, // Increased timeout for better connection stability
   socketTimeoutMS: 45000,
@@ -26,7 +26,13 @@ const options = {
   retryWrites: true,
   w: 'majority',
   ssl: true,
-  authSource: 'admin'
+  authSource: 'admin',
+  replicaSet: 'atlas-13c5oo-shard-0',
+  hosts: [
+    'ac-wf4ftsg-shard-00-00.ctiutem.mongodb.net:27017',
+    'ac-wf4ftsg-shard-00-01.ctiutem.mongodb.net:27017',
+    'ac-wf4ftsg-shard-00-02.ctiutem.mongodb.net:27017'
+  ]
 };
 
 // Connect to MongoDB with SQLite fallback
