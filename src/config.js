@@ -15,5 +15,8 @@ export const axiosConfig = {
   validateStatus: function (status) {
     return status >= 200 && status < 300;
   },
-  maxRedirects: 5
+  maxRedirects: 5,
+  // SSL/TLS Configuration
+  httpsAgent: undefined, // Let browser handle SSL/TLS
+  rejectUnauthorized: false // Allow self-signed certificates
 };

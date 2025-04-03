@@ -154,8 +154,11 @@ const FormPage = () => {
           ...axiosConfig.headers,
           'Content-Type': 'multipart/form-data'
         },
-        // Apply SSL configuration
-        httpsAgent: axiosConfig.httpsAgent
+        // Let browser handle SSL/TLS negotiation
+        validateStatus: function (status) {
+          return status >= 200 && status < 300;
+        },
+        timeout: 15000 // Increase timeout for larger form data
       });
       
       // Navigate to thank you page with MongoDB _id for print/edit functionality

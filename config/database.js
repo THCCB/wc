@@ -26,13 +26,7 @@ const options = {
   retryWrites: true,
   w: 'majority',
   ssl: true,
-  authSource: 'admin',
-  replicaSet: 'atlas-13c5oo-shard-0',
-  hosts: [
-    'ac-wf4ftsg-shard-00-00.ctiutem.mongodb.net:27017',
-    'ac-wf4ftsg-shard-00-01.ctiutem.mongodb.net:27017',
-    'ac-wf4ftsg-shard-00-02.ctiutem.mongodb.net:27017'
-  ]
+  authSource: 'admin'
 };
 
 // Connect to MongoDB with SQLite fallback
