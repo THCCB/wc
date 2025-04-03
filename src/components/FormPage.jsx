@@ -136,6 +136,9 @@ const FormPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Define apiEndpoint outside try/catch so it's available in both blocks
+    const apiEndpoint = `${API_URL}/api/submit`;
+    
     try {
       // Create a FormData object to handle file uploads
       const form = new FormData();
@@ -153,8 +156,6 @@ const FormPage = () => {
         form.append('id', location.state.submissionData._id); // Using MongoDB's _id
       }
       
-      // Use direct string for API endpoint to avoid URL parsing issues
-      const apiEndpoint = `${API_URL}/api/submit`;
       console.log('Submitting form to:', apiEndpoint);
       
       // Use a simplified axios configuration optimized for browser environments
